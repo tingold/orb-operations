@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Example JTS test fixture file -->
+<!-- This file demonstrates the expected XML format for JTS test fixtures -->
+<!-- NOTE: The expected results in this file are examples only and may not be correct -->
+<!-- For actual testing, copy real test fixtures from the JTS repository -->
+<!-- This file is included to show the XML format and test the parser -->
+
+<run>
+  <!-- Union operation test -->
+  <test name="union_overlapping_polygons" op="UNION">
+    <a>POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))</a>
+    <b>POLYGON((5 5, 15 5, 15 15, 5 15, 5 5))</b>
+    <result>POLYGON((0 0, 10 0, 10 5, 15 5, 15 15, 5 15, 5 10, 0 10, 0 0))</result>
+  </test>
+
+  <!-- Intersection operation test -->
+  <test name="intersection_overlapping_polygons" op="INTERSECTION">
+    <a>POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))</a>
+    <b>POLYGON((5 5, 15 5, 15 15, 5 15, 5 5))</b>
+    <result>POLYGON((5 5, 10 5, 10 10, 5 10, 5 5))</result>
+  </test>
+
+  <!-- Difference operation test -->
+  <test name="difference_overlapping_polygons" op="DIFFERENCE">
+    <a>POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))</a>
+    <b>POLYGON((5 5, 15 5, 15 15, 5 15, 5 5))</b>
+    <result>POLYGON((0 0, 10 0, 10 5, 5 5, 5 10, 0 10, 0 0))</result>
+  </test>
+
+  <!-- Symmetric difference operation test -->
+  <test name="symmetric_difference_overlapping_polygons" op="SYMDIFFERENCE">
+    <a>POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))</a>
+    <b>POLYGON((5 5, 15 5, 15 15, 5 15, 5 5))</b>
+    <result>MULTIPOLYGON(((0 0, 10 0, 10 5, 5 5, 5 10, 0 10, 0 0)), ((10 5, 15 5, 15 15, 5 15, 5 10, 10 10, 10 5)))</result>
+  </test>
+
+  <!-- Empty result test -->
+  <test name="intersection_disjoint_polygons" op="INTERSECTION">
+    <a>POLYGON((0 0, 5 0, 5 5, 0 5, 0 0))</a>
+    <b>POLYGON((10 10, 15 10, 15 15, 10 15, 10 10))</b>
+    <result>POLYGON EMPTY</result>
+  </test>
+
+  <!-- Point operations -->
+  <test name="union_points" op="UNION">
+    <a>POINT(1 2)</a>
+    <b>POINT(3 4)</b>
+    <result>MULTIPOINT((1 2), (3 4))</result>
+  </test>
+
+  <test name="intersection_same_point" op="INTERSECTION">
+    <a>POINT(1 2)</a>
+    <b>POINT(1 2)</b>
+    <result>POINT(1 2)</result>
+  </test>
+</run>
+
