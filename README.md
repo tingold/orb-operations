@@ -2,6 +2,8 @@
 
 A pure Go library providing spatial operations (Union, Intersection, Difference, SymmetricDifference, Buffer) for the [Orb geometry library](https://github.com/paulmach/orb).
 
+[![CI](https://github.com/tingold/orb-operations/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tingold/orb-operations/actions/workflows/ci.yml)
+
 ## Features
 
 - **Pure Go implementation** - No C dependencies (no GEOS, etc.)
