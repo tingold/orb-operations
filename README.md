@@ -1,17 +1,18 @@
 # orb-operations
 
-A pure Go library providing spatial operations (Union, Intersection, Difference, SymmetricDifference) for the [Orb geometry library](https://github.com/paulmach/orb).
+A pure Go library providing spatial operations (Union, Intersection, Difference, SymmetricDifference, Buffer) for the [Orb geometry library](https://github.com/paulmach/orb).
 
 ## Features
 
 - **Pure Go implementation** - No C dependencies (no GEOS, etc.)
 - **Minimal dependencies** - Only depends on `github.com/paulmach/orb`
 - **Comprehensive geometry support** - Works with Points, MultiPoints, LineStrings, MultiLineStrings, Polygons, and MultiPolygons
-- **Four core operations**:
+- **Five core operations**:
   - `Union` - Combines two geometries
   - `Intersection` - Finds the common parts of two geometries
   - `Difference` - Subtracts one geometry from another
   - `SymmetricDifference` - Returns parts of geometries that don't overlap
+  - `Buffer` - Creates a buffer zone around a geometry at a specified distance
 
 ## Installation
 
@@ -75,6 +76,32 @@ func main() {
 	
 	result := orboperations.SymmetricDifference(poly1, poly2)
 	fmt.Printf("Symmetric difference result: %v\n", result)
+```
+
+#### Buffer
+
+```go
+	// Buffer a point (creates a circular polygon)
+	point := orb.Point{0, 0}
+	buffered := orboperations.Buffer(point, 5.0)
+	fmt.Printf("Buffered point: %v\n", buffered)
+	
+	// Buffer a linestring
+	line := orb.LineString{{0, 0}, {10, 10}}
+	bufferedLine := orboperations.Buffer(line, 2.0)
+	fmt.Printf("Buffered line: %v\n", bufferedLine)
+	
+	// Buffer a polygon (expand or contract)
+	poly := orb.Polygon{{{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}}}
+	expanded := orboperations.Buffer(poly, 2.0)   // Expand by 2 units
+	contracted := orboperations.Buffer(poly, -1.0) // Contract by 1 unit
+	
+	// Buffer with custom parameters
+	params := orboperations.DefaultBufferParams()
+	params.QuadrantSegments = 16  // More segments for smoother curves
+	params.CapStyle = orboperations.CapSquare
+	params.JoinStyle = orboperations.JoinMiter
+	bufferedCustom := orboperations.BufferWithParams(line, 3.0, params)
 ```
 
 ### Working with Points
@@ -147,6 +174,44 @@ Computes the difference of two geometries (`geom1 - geom2`). Returns a geometry 
 
 Computes the symmetric difference of two geometries. Equivalent to `Union(Difference(geom1, geom2), Difference(geom2, geom1))`.
 
+#### `Buffer(geom orb.Geometry, distance float64) orb.Geometry`
+
+Computes a buffer around a geometry at the specified distance. Positive distance expands the geometry, negative distance shrinks polygons. Returns a Polygon or MultiPolygon representing the buffered area.
+
+**Supported geometry types:**
+- `Point` → Creates a circular polygon approximation
+- `MultiPoint` → Buffers each point and unions the results
+- `LineString` → Creates a polygon around the line at the given distance
+- `MultiLineString` → Buffers each line and unions the results
+- `Polygon` → Expands (positive) or contracts (negative) the polygon
+- `MultiPolygon` → Buffers each polygon and unions the results
+- `Ring` → Treated as a closed LineString
+- `Collection` → Buffers each element and unions the results
+
+#### `BufferWithParams(geom orb.Geometry, distance float64, params BufferParams) orb.Geometry`
+
+Computes a buffer with custom parameters. See `BufferParams` for available options.
+
+#### `DefaultBufferParams() BufferParams`
+
+Returns default buffer parameters:
+- `QuadrantSegments`: 8 (32 segments for a full circle)
+- `CapStyle`: `CapRound` (rounded ends)
+- `JoinStyle`: `JoinRound` (rounded corners)
+- `MiterLimit`: 5.0
+
+#### Buffer Parameters
+
+**Cap Styles:**
+- `CapRound` - Rounded ends (default)
+- `CapFlat` - Flat/butt ends
+- `CapSquare` - Square ends extending past endpoint
+
+**Join Styles:**
+- `JoinRound` - Rounded corners (default)
+- `JoinMiter` - Pointed corners (uses `MiterLimit`)
+- `JoinBevel` - Flat corners
+
 ## Implementation Notes
 
 ### Algorithms
@@ -159,6 +224,11 @@ Computes the symmetric difference of two geometries. Equivalent to `Union(Differ
 - **LineString operations**: Uses line segment intersection algorithms to find intersection points and combines segments.
 - **Point operations**: Uses set-based operations with epsilon tolerance for floating-point comparisons.
 - **Point-in-polygon**: Uses the ray casting algorithm.
+- **Buffer operations**: 
+  - **Points**: Creates circular polygon approximations using parametric circle generation
+  - **LineStrings**: Generates offset curves and creates polygons around line segments with configurable cap and join styles
+  - **Polygons**: Uses offset curve generation for expansion/contraction, handling both positive (expansion) and negative (contraction) distances
+  - Supports multiple cap styles (Round, Flat, Square) and join styles (Round, Miter, Bevel)
 
 ### Limitations
 

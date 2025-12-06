@@ -1049,7 +1049,7 @@ func handlePolygonMultiPolygonOp(p orb.Polygon, mp orb.MultiPolygon, op booleanO
 		}
 		return normalizePolygonResult(results)
 	case differenceOp:
-		var result orb.MultiPolygon = orb.MultiPolygon{p}
+		result := orb.MultiPolygon{p}
 		for _, p2 := range mp {
 			var newResult orb.MultiPolygon
 			for _, r := range result {

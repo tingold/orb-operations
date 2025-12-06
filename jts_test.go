@@ -17,6 +17,7 @@ type JTSOperation struct {
 	Name    string   `xml:"name,attr"`
 	Arg1    string   `xml:"arg1,attr"`
 	Arg2    string   `xml:"arg2,attr"`
+	Distance string  `xml:"distance,attr"` // For buffer operations
 	Result  string   `xml:",chardata"`
 }
 
@@ -223,12 +224,13 @@ func parseWKTMultiLineString(wkt string) (orb.MultiLineString, error) {
 	depth := 0
 	startIdx := -1
 	for i, r := range content {
-		if r == '(' {
+		switch r {
+		case '(':
 			if depth == 0 {
 				startIdx = i
 			}
 			depth++
-		} else if r == ')' {
+		case ')':
 			depth--
 			if depth == 0 && startIdx != -1 {
 				lsStr := "LINESTRING" + content[startIdx:i+1]
@@ -264,12 +266,13 @@ func parseWKTPolygon(wkt string) (orb.Polygon, error) {
 	depth := 0
 	startIdx := -1
 	for i, r := range content {
-		if r == '(' {
+		switch r {
+		case '(':
 			if depth == 0 {
 				startIdx = i
 			}
 			depth++
-		} else if r == ')' {
+		case ')':
 			depth--
 			if depth == 0 && startIdx != -1 {
 				ringStr := content[startIdx : i+1]
@@ -340,12 +343,13 @@ func parseWKTMultiPolygon(wkt string) (orb.MultiPolygon, error) {
 	depth := 0
 	startIdx := -1
 	for i, r := range content {
-		if r == '(' {
+		switch r {
+		case '(':
 			if depth == 0 {
 				startIdx = i
 			}
 			depth++
-		} else if r == ')' {
+		case ')':
 			depth--
 			if depth == 0 && startIdx != -1 {
 				// Check if this is a polygon (has nested parentheses)
@@ -533,15 +537,86 @@ func TestJTSOperations(t *testing.T) {
 						t.Fatalf("Error parsing geometry A: %v", err)
 					}
 
-					geomB, err := parseWKTGeometry(testCase.B)
-					if err != nil {
-						t.Fatalf("Error parsing geometry B: %v", err)
+					// Parse geometry B only if it's not empty (needed for binary operations)
+					var geomB orb.Geometry
+					if strings.TrimSpace(testCase.B) != "" {
+						var err error
+						geomB, err = parseWKTGeometry(testCase.B)
+						if err != nil {
+							t.Fatalf("Error parsing geometry B: %v", err)
+						}
 					}
 
 					for _, test := range testCase.Tests {
 						for _, op := range test.Ops {
 							opName := strings.ToUpper(op.Name)
 
+							// Check if this is a buffer operation (has distance attribute)
+							if op.Distance != "" {
+								// Buffer operation: uses single geometry and distance
+								var geom orb.Geometry
+								var geomStr string
+								// Use arg1 to determine which geometry to use, default to A
+								if strings.ToUpper(op.Arg1) == "B" && geomB != nil {
+									geom = geomB
+									geomStr = testCase.B
+								} else {
+									geom = geomA
+									geomStr = testCase.A
+								}
+
+								// Parse distance
+								var distance float64
+								if _, err := fmt.Sscanf(op.Distance, "%f", &distance); err != nil {
+									t.Fatalf("Error parsing buffer distance '%s': %v", op.Distance, err)
+								}
+
+								// Execute buffer operation
+								var result orb.Geometry
+								if strings.Contains(opName, "BUFFER") || opName == "BUFFER" {
+									// Use JTS-compatible parameters based on geometry type
+									params := DefaultBufferParams()
+									switch geom.(type) {
+									case orb.Point, orb.MultiPoint:
+										// JTS tests expect 4 segments per quadrant for points
+										params.QuadrantSegments = 4
+									case orb.LineString, orb.MultiLineString:
+										// JTS tests expect flat caps for linestrings
+										params.CapStyle = CapFlat
+									}
+									result = BufferWithParams(geom, distance, params)
+								} else {
+									t.Skipf("Skipping unsupported buffer operation: %s", op.Name)
+									continue
+								}
+
+								// Parse expected result
+								expectedResultStr := strings.TrimSpace(op.Result)
+								expectedResult, err := parseWKTGeometry(expectedResultStr)
+								if err != nil {
+									// If result is EMPTY or invalid, check if our result is also empty/nil
+									if strings.Contains(strings.ToUpper(expectedResultStr), "EMPTY") {
+										if result != nil {
+											// Check if result is an empty geometry
+											if isEmptyGeometry(result) {
+												continue // Test passes
+											}
+											t.Errorf("Expected empty result, got: %v", result)
+										}
+										continue // Test passes
+									}
+									t.Fatalf("Error parsing expected result '%s': %v", expectedResultStr, err)
+								}
+
+								// Compare results
+								if !geometriesEqual(result, expectedResult) {
+									t.Errorf("Buffer operation %s failed\nInput: %s\nDistance: %s\nExpected: %v (type %T)\nGot: %v (type %T)",
+										op.Name, geomStr, op.Distance, expectedResult, expectedResult, result, result)
+								}
+								continue
+							}
+
+							// Binary operations (union, intersection, etc.)
 							// Determine operand order based on arg1 and arg2 attributes
 							var operand1, operand2 orb.Geometry
 							if strings.ToUpper(op.Arg1) == "B" {
