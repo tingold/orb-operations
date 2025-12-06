@@ -13,12 +13,12 @@ import (
 
 // JTSOperation represents a single operation test
 type JTSOperation struct {
-	XMLName xml.Name `xml:"op"`
-	Name    string   `xml:"name,attr"`
-	Arg1    string   `xml:"arg1,attr"`
-	Arg2    string   `xml:"arg2,attr"`
-	Distance string  `xml:"distance,attr"` // For buffer operations
-	Result  string   `xml:",chardata"`
+	XMLName  xml.Name `xml:"op"`
+	Name     string   `xml:"name,attr"`
+	Arg1     string   `xml:"arg1,attr"`
+	Arg2     string   `xml:"arg2,attr"`
+	Distance string   `xml:"distance,attr"` // For buffer operations
+	Result   string   `xml:",chardata"`
 }
 
 // JTSOperationTest represents a single test case
@@ -557,7 +557,10 @@ func TestJTSOperations(t *testing.T) {
 								var geom orb.Geometry
 								var geomStr string
 								// Use arg1 to determine which geometry to use, default to A
-								if strings.ToUpper(op.Arg1) == "B" && geomB != nil {
+								if strings.ToUpper(op.Arg1) == "B" {
+									if geomB == nil {
+										t.Fatalf("Buffer operation specifies arg1=\"B\" but geometry B is empty or not defined")
+									}
 									geom = geomB
 									geomStr = testCase.B
 								} else {
