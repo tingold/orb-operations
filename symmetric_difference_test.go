@@ -82,4 +82,3 @@ func TestSymmetricDifference(t *testing.T) {
 		})
 	}
 }
-

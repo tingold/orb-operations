@@ -122,7 +122,7 @@ func TestUnion(t *testing.T) {
 
 func TestUnionNil(t *testing.T) {
 	p := orb.Point{1, 2}
-	
+
 	result := Union(nil, p)
 	if result != p {
 		t.Errorf("Union(nil, p) = %v, want %v", result, p)
@@ -133,4 +133,3 @@ func TestUnionNil(t *testing.T) {
 		t.Errorf("Union(p, nil) = %v, want %v", result, p)
 	}
 }
-

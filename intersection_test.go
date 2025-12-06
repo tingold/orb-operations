@@ -137,4 +137,3 @@ func TestIntersection(t *testing.T) {
 		})
 	}
 }
-

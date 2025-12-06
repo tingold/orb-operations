@@ -239,4 +239,3 @@ func TestSymmetricDifferenceLines(t *testing.T) {
 		t.Error("Expected non-empty symmetric difference")
 	}
 }
-

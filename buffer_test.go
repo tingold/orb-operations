@@ -418,4 +418,3 @@ func BenchmarkBufferPolygon(b *testing.B) {
 		Buffer(poly, 1.0)
 	}
 }
-

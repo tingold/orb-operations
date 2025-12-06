@@ -129,4 +129,3 @@ func bufferCollection(coll orb.Collection, distance float64, params BufferParams
 
 	return result
 }
-

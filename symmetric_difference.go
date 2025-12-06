@@ -9,4 +9,3 @@ func SymmetricDifference(geom1, geom2 orb.Geometry) orb.Geometry {
 	diff2 := Difference(geom2, geom1)
 	return Union(diff1, diff2)
 }
-

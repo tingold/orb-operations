@@ -7,4 +7,3 @@ import "github.com/paulmach/orb"
 func Difference(geom1, geom2 orb.Geometry) orb.Geometry {
 	return booleanOperation(geom1, geom2, differenceOp)
 }
-
